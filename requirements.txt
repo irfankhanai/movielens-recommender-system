@@ -1,0 +1,9 @@
+# Add pinned dependencies after agreeing on Python/library versions.
+# Example format (choose and test real versions before use):
+# numpy==X.Y.Z
+# pandas==X.Y.Z
+# scikit-learn==X.Y.Z
+# matplotlib==X.Y.Z
+#
+# Before final submission, replace this placeholder with every required
+# dependency pinned to a specific, tested version.
