@@ -35,17 +35,7 @@ movielens-recommender-system/
 
 Download **MovieLens 1M** from https://grouplens.org/datasets/movielens/1m/
 
-Extract it locally so the files are accessible as:
 
-- `data/ml-1m/ratings.dat`
-- `data/ml-1m/movies.dat`
-- `data/ml-1m/users.dat`
-
-**Do not commit the dataset** to this repository. The `.gitignore` excludes it.
-
-## Environment setup
-
-Use Python (record the exact version your team chooses here). Create and activate a virtual environment, then install pinned dependencies after you fill in `requirements.txt`:
 
 ```bash
 python -m venv .venv
@@ -64,17 +54,11 @@ The intended final command is:
 python run_all.py --data-dir ./data/ml-1m
 ```
 
-**Important:** This downloaded ZIP is a **starter folder structure only**. `run_all.py` and the Python modules are placeholders; they do not train or evaluate any models yet. Implement them before submitting. The final command must reproduce every metric and figure in the report, using fixed documented random seeds.
 
-## Deliverables and team agreements
 
-- Use the **official course report and results CSV templates** and keep one report throughout Parts 1–3.
-- Commit source code, dependencies, reports, slides, and required results to GitHub.
-- Document model choices, evaluation protocol, hyperparameter budgets, and seeds.
-- Write contribution statements for each team member and disclose any AI-assistant use in the report.
 
 ## Team
 
-- Member 1: [name / GitHub username]
+- Member 1: Irfan Khan / 153218338 / GitHub:Irfankhanai
 - Member 2: [name / GitHub username]
 - Member 3: [name / GitHub username]
