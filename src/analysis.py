@@ -2,8 +2,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from preprocessing import get_data
-
 
 def print_statistics(movies, ratings, users):
     """
@@ -122,18 +120,18 @@ def show_rating_activity(ratings):
     plt.show()
 
 
-def show_statistics():
+def show_statistics(movies, ratings, users):
     """
-    Show all the statistics regarding the dataset
+    Show all the statistics regarding the dataset, namely:
+        - Print statistics
+        - Show rating distribution
+        - Show movie popularity
+        - Show user activity
+        - Show rating activity
     :return:
     """
-    movies, ratings, users = get_data()
-
     print_statistics(movies, ratings, users)
     show_rating_distribution(ratings)
     show_movie_popularity(ratings)
     show_user_activity(ratings)
     show_rating_activity(ratings)
-
-def explore_data():
-    return None

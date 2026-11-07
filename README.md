@@ -59,6 +59,6 @@ python run_all.py --data-dir ./data/ml-1m
 
 ## Team
 
-- Member 1: Irfan Khan / 153218338 / GitHub:Irfankhanai
-- Member 2: [name / GitHub username]
-- Member 3: [name / GitHub username]
+- Member 1: Irfan Khan / 153218338 / GitHub: Irfankhanai
+- Member 2: Kaan Pide / 152267623 / GitHub: klsaerf
+- Member 3: Reinis Gustavs Ignatjevs / 152215565 / GitHub: ExtraAngel
