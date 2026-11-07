@@ -61,24 +61,39 @@ def get_data():
 
 def split_data(ratings):
     """
-    Splits the dataset into train, validation and test sets, with 80/10/10 split respectively.
+    Splits the dataset into train, validation and test sets, with 80/10/10  global temporal split respectively.
     :param ratings: Rating dataset
     :return: The train, validation and test sets
     """
-    # Sort each user's ratings by time
+    # Sort ratings by time:
     df = ratings.sort_values(
-        ["user_id", "timestamp", "movie_id"]
+        ["timestamp", "user_id", "movie_id"]
     ).copy()
 
-    # Calculate each rating's position within its user
-    pos = df.groupby("user_id").cumcount()
-    total = df.groupby("user_id")["rating"].transform("size")
+    # Find timestamps by which x% of all timestamps have occurred:
+    timestamp_val = int(df["timestamp"].quantile(0.80))
+    timestamp_test = int(df["timestamp"].quantile(0.90))
 
-    # Temporal 80/10/10 split per user
-    train = df[pos < (total * 0.8).astype(int)].copy()
-    val = df[(pos >= (total * 0.8).astype(int)) &
-             (pos < (total * 0.9).astype(int))].copy()
-    test = df[pos >= (total * 0.9).astype(int)].copy()
+    # TODO: log these? or return these?
+    # print("Validation split happens at:", pd.to_datetime(timestamp_val, unit="s", utc=True))
+    # print("Test split happens at:", pd.to_datetime(timestamp_test, unit="s", utc=True))
+
+    # Global Temporal 80/10/10 split
+    train = df[df["timestamp"] < timestamp_val].copy()
+    val = df[(df["timestamp"] >= timestamp_val) & (df["timestamp"] < timestamp_test)].copy()
+    test = df[df["timestamp"] >= timestamp_test].copy()
+
+    # print("Training ratings:", len(train))
+    # print("Validation ratings:", len(val))
+    # print("Testing ratings:", len(test))
+
+    # n_users_train = train["user_id"].nunique()
+    # n_users_val = val["user_id"].nunique()
+    # n_users_test = test["user_id"].nunique()
+    #
+    # print("Users in training set:", n_users_train)
+    # print("Users in validation set:", n_users_val)
+    # print("Users in test set:", n_users_test)
 
     return train, val, test
 
