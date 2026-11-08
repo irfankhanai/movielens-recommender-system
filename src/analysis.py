@@ -299,6 +299,77 @@ def show_binary_feedback_statistics(ratings, movies, users, threshold=4):
         logging.info(f"Popularity (all) vs (positive), top {n} overlap: {overlap * 100:.0f}%")
 
 
+def show_split_statistics(train, val, test, threshold=4):
+    """
+    Show how the temporal split interacts with the feedback treatment (keeping only ratings >= threshold)
+    :param train: Training set
+    :param val: Validation set
+    :param test: Test set
+    :param threshold: Minimum rating counted as positive
+    :return:
+    """
+    logging.info(f"--------- Logging the split statistics (rating >= {threshold}): ---------")
+
+    # The split must not leak: every training rating precedes every validation rating, and so on
+    assert train["timestamp"].max() < val["timestamp"].min(), "Training and validation overlap in time"
+    assert val["timestamp"].max() < test["timestamp"].min(), "Validation and test overlap in time"
+
+    to_date = lambda t: pd.to_datetime(t, unit="s", utc=True).strftime("%Y-%m-%d")
+
+    # Time span and positive share of every set
+    for name, data in [("Training", train), ("Validation", val), ("Test", test)]:
+        positive_data = data[data["rating"] >= threshold]
+        span_days = (data["timestamp"].max() - data["timestamp"].min()) / 86400
+        logging.info(f"{name}: {to_date(data['timestamp'].min())} to {to_date(data['timestamp'].max())} "
+                     f"({span_days:.1f} days), positive ratings: {len(positive_data)} "
+                     f"({len(positive_data) / len(data) * 100:.2f}%)")
+
+    # What the models can know about the evaluated users and movies
+    positive_train = train[train["rating"] >= threshold]
+    train_users = set(train["user_id"])
+    train_movies = set(train["movie_id"])
+    positive_train_movies = set(positive_train["movie_id"])
+    positive_per_user = positive_train.groupby("user_id").size()
+
+    # What the models are built from (training set only)
+    n_train_users = train["user_id"].nunique()
+    n_positive_users = positive_train["user_id"].nunique()
+    n_train_movies = train["movie_id"].nunique()
+    n_positive_movies = positive_train["movie_id"].nunique()
+    positive_per_movie = positive_train.groupby("movie_id").size()
+
+    thin_users = (positive_per_user < 5).sum() + (n_train_users - n_positive_users)
+    thin_movies = (positive_per_movie < 10).sum() + (n_train_movies - n_positive_movies)
+
+    logging.info(f"Training: users with a rating: {n_train_users}, with a positive rating: {n_positive_users}")
+    logging.info(f"Training: positive ratings per user: mean {positive_per_user.mean():.1f}, "
+                 f"median {positive_per_user.median():.0f}")
+    logging.info(f"Training: users with < 5 positive ratings: {thin_users} ({thin_users / n_train_users * 100:.2f}%)")
+    logging.info(f"Training: movies with a rating: {n_train_movies}, with a positive rating: {n_positive_movies}")
+    logging.info(f"Training: movies with < 10 positive ratings: {thin_movies} ({thin_movies / n_train_movies * 100:.2f}%)")
+
+    for name, data in [("Validation", val), ("Test", test)]:
+        relevant = data[data["rating"] >= threshold]
+        eval_users = set(relevant["user_id"])
+        n_eval = len(eval_users)
+
+        no_history = len(eval_users - train_users)
+        no_positive = len(eval_users - set(positive_train["user_id"]))
+        thin = sum(1 for u in eval_users if positive_per_user.get(u, 0) < 5)
+
+        logging.info(f"{name}: users with a relevant rating: {n_eval} of {data['user_id'].nunique()}")
+        logging.info(f"{name}: relevant ratings per user: mean {len(relevant) / n_eval:.1f}, "
+                     f"median {relevant.groupby('user_id').size().median():.0f}")
+        logging.info(f"{name}: evaluated users with no training rating: {no_history} ({no_history / n_eval * 100:.2f}%)")
+        logging.info(f"{name}: evaluated users with no positive training rating: {no_positive} ({no_positive / n_eval * 100:.2f}%)")
+        logging.info(f"{name}: evaluated users with < 5 positive training ratings: {thin} ({thin / n_eval * 100:.2f}%)")
+
+        unseen_share = (~data["movie_id"].isin(train_movies)).mean() * 100
+        no_positive_share = (~relevant["movie_id"].isin(positive_train_movies)).mean() * 100
+        logging.info(f"{name}: ratings on movies with no training rating: {unseen_share:.2f}%")
+        logging.info(f"{name}: relevant ratings on movies with no positive training rating: {no_positive_share:.2f}%")
+
+
 def show_statistics(movies, ratings, users, output_dir=None, show=True):
     """
     Show all the statistics regarding the dataset, namely:

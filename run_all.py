@@ -81,6 +81,7 @@ def main() -> None:
 
     cos_similarity, X = pp.get_cosine_similarity(train, movies, users)
     analysis.show_binary_feedback_statistics(ratings, movies, users, 4)
+    analysis.show_split_statistics(train, val, test, 4)
 
     k = 20
     neighbors = np.argsort(cos_similarity, axis=1)[:, -k:]
