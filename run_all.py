@@ -8,6 +8,7 @@ import argparse
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import logging
 
 from src import preprocessing as pp
 from src import analysis as analysis
@@ -16,35 +17,35 @@ from src import evaluation as eval
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
     parser = argparse.ArgumentParser(description="Reproduce MovieLens recommender experiments")
     parser.add_argument("--data-dir", type=Path, required=True, help="Path to extracted ml-1m data")
     args = parser.parse_args()
     if not args.data_dir.is_dir():
         parser.error(f"Dataset directory does not exist: {args.data_dir}")
 
-    ####################################################################################################################
+    ##########################################   PREPROCESSING AND ANALYSIS   ##########################################
+
 
     # Load the datasets, and print their sizes
     movies, ratings, users = pp.get_data()
-    print("Movies:", movies.shape)
-    print("Ratings:", ratings.shape)
-    print("Users:", users.shape)
+    logging.info(f"Movies: {movies.shape}")
+    logging.info(f"Ratings: {ratings.shape}")
+    logging.info(f"Users: {users.shape}")
 
-    print("\nSample Ratings:")
-    print(ratings.head())
+    logging.info(f"Sample Ratings:\n{ratings.head()}")
+
 
     # Show the relevant statistics regarding the datasets
     analysis.show_statistics(movies, ratings, users)
 
+
     # Split the ratings dataset into training, validation
     # and testing datasets using 80/10/10 split
     train, val, test = pp.split_data(ratings)
-    print("Training ratings:", len(train))
-    print("Validation ratings:", len(val))
-    print("Testing ratings:", len(test))
-    print()
 
-    ####################################################################################################################
+    ###############################################   BASELINE MODELS  #################################################
 
     # Popularity scores using training data only
     all_counts = train["movie_id"].value_counts()
@@ -60,10 +61,6 @@ def main() -> None:
         all_movies, key=lambda m: (-positive_counts.get(m, 0), m)
     )
 
-    # Example recommendations for User 1
-    print("All Ratings:", base.recommend_popular(1, train, popular_all, n=10))
-    print("Positive Ratings:", base.recommend_popular(1, train, popular_positive, n=10))
-
     # Treat ratings >= 4 as positive feedback
     positive = train[train["rating"] >= 4]
 
@@ -75,11 +72,13 @@ def main() -> None:
     k = 20
     neighbors = np.argsort(cos_similarity, axis=1)[:, -k:]
 
-    # Test for User 1
-    print("Item-based kNN:", base.recommend_knn(1, positive, movie_ids, movie_idx, neighbors, cos_similarity, train, movies, n=10))
-    print()
+    # Example recommendations for User 1
+    logging.info(f"--------- Logging the example recommendations based on the training set for the User 1: ---------")
+    logging.info(f"All Ratings: {base.recommend_popular(1, train, popular_all, n=10)}")
+    logging.info(f"Positive Ratings: {base.recommend_popular(1, train, popular_positive, n=10)}")
+    logging.info(f"Item-based kNN: {base.recommend_knn(1, positive, movie_ids, movie_idx, neighbors, cos_similarity, train, movies, n=10)}")
 
-    ####################################################################################################################
+    ##################################################   EVALUATION   ##################################################
 
     # Evaluate baseline models
     results = {
@@ -89,7 +88,7 @@ def main() -> None:
         "Popular (Positive)": eval.evaluate(
             lambda u: base.recommend_popular(u, train, popular_positive), val, len(movies)
         ),
-        "Item-kNN (k=20)": eval.evaluate(
+        f"Item-kNN (k={k})": eval.evaluate(
             lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, cos_similarity, train, movies), val, len(movies)
         )
     }
@@ -99,10 +98,9 @@ def main() -> None:
         index=["Precision@10", "Recall@10", "NDCG@10", "Coverage"]
     ).T
 
-    print(results_df.round(4))
-    print()
+    logging.info(f"--------- Logging the evaluation statistics on the validation set: ---------\n{results_df.round(4)}")
 
-    ####################################################################################################################
+    ############################################   SIMILARITY COMPARISON   #############################################
 
     jaccard = pp.get_jaccard_similarity(X)
 
@@ -113,7 +111,7 @@ def main() -> None:
     for method, sim in methods.items():
         similarity = sim
 
-        for k in [10, 30]:
+        for k in [10, 20, 30]:
             neighbors = np.argsort(similarity, axis=1)[:, -k:]
             metrics = eval.evaluate(
                 lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, similarity, train, movies), val, len(movies)
@@ -125,8 +123,7 @@ def main() -> None:
         columns=["Similarity", "k", "Precision", "Recall", "NDCG", "Coverage"]
     )
 
-    print(tuning_df.round(4))
-    print()
+    logging.info(f"--------- Logging the comparison between cosine and jaccard similarity measures: ---------\n{tuning_df.round(4)}")
 
     # Select the best using NDCG
     best = tuning_df.loc[tuning_df["NDCG"].idxmax()]
@@ -134,10 +131,10 @@ def main() -> None:
     k = int(best["k"])
     neighbors = np.argsort(similarity, axis=1)[:, -k:]
 
-    print("\nBest model:", best["Similarity"], "k =", k)
-    print()
+    logging.info(f"Best model: {best["Similarity"]}, k = {k}")
 
-    ####################################################################################################################
+
+    ######################################   EVALUATION ON TEST DATA   #################################################
 
     # Evaluate on test data
     test_results = {
@@ -147,7 +144,7 @@ def main() -> None:
         "Popular (Positive)": eval.evaluate(
             lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies)
         ),
-        "Item-kNN (Cosine, k=10)": eval.evaluate(
+        f"Item-kNN ({best["Similarity"]}, k = {k})": eval.evaluate(
             lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, similarity, train, movies), test, len(movies)
         )
     }
@@ -157,10 +154,9 @@ def main() -> None:
         index=["Precision@10", "Recall@10", "NDCG@10", "Coverage"]
     ).T
 
-    print(test_df.round(4))
-    print()
+    logging.info(f"--------- Logging the evaluation metrics on the test dataset: ---------\n{test_df.round(4)}")
 
-    ####################################################################################################################
+    ########################################   SAVING THE RESULTS   ####################################################
 
     # Create results folder
     Path("results").mkdir(exist_ok=True)
@@ -171,7 +167,7 @@ def main() -> None:
     # Save kNN tuning results
     tuning_df.to_csv("results/knn_tuning.csv", index=False)
 
-    print("Results saved successfully!")
+    logging.info(f"Results saved successfully!")
 
 
 if __name__ == "__main__":

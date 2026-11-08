@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics.pairwise import cosine_similarity
+import logging
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -65,6 +66,7 @@ def split_data(ratings):
     :param ratings: Rating dataset
     :return: The train, validation and test sets
     """
+    logging.info(f"--------- Logging the training, validation and test splits: ---------")
     # Sort ratings by time:
     df = ratings.sort_values(
         ["timestamp", "user_id", "movie_id"]
@@ -74,26 +76,25 @@ def split_data(ratings):
     timestamp_val = int(df["timestamp"].quantile(0.80))
     timestamp_test = int(df["timestamp"].quantile(0.90))
 
-    # TODO: log these? or return these?
-    # print("Validation split happens at:", pd.to_datetime(timestamp_val, unit="s", utc=True))
-    # print("Test split happens at:", pd.to_datetime(timestamp_test, unit="s", utc=True))
+    logging.info(f"Validation split happens at: {pd.to_datetime(timestamp_val, unit="s", utc=True)}")
+    logging.info(f"Test split happens at: {pd.to_datetime(timestamp_test, unit="s", utc=True)}")
 
     # Global Temporal 80/10/10 split
     train = df[df["timestamp"] < timestamp_val].copy()
     val = df[(df["timestamp"] >= timestamp_val) & (df["timestamp"] < timestamp_test)].copy()
     test = df[df["timestamp"] >= timestamp_test].copy()
 
-    # print("Training ratings:", len(train))
-    # print("Validation ratings:", len(val))
-    # print("Testing ratings:", len(test))
+    logging.info(f"Training ratings: {len(train)}")
+    logging.info(f"Validation ratings: {len(val)}")
+    logging.info(f"Testing ratings: {len(test)}")
 
-    # n_users_train = train["user_id"].nunique()
-    # n_users_val = val["user_id"].nunique()
-    # n_users_test = test["user_id"].nunique()
-    #
-    # print("Users in training set:", n_users_train)
-    # print("Users in validation set:", n_users_val)
-    # print("Users in test set:", n_users_test)
+    n_users_train = train["user_id"].nunique()
+    n_users_val = val["user_id"].nunique()
+    n_users_test = test["user_id"].nunique()
+
+    logging.info(f"Users in training set: {n_users_train}")
+    logging.info(f"Users in validation set: {n_users_val}")
+    logging.info(f"Users in test set: {n_users_test}")
 
     return train, val, test
 
