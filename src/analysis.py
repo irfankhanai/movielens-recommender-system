@@ -1,6 +1,7 @@
 """Explore data"""
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import logging
 
 
@@ -111,8 +112,14 @@ def show_movie_popularity(ratings):
     plt.title("Movie Popularity - Long Tail")
     plt.xlabel("Movies (Ranked by Popularity)")
     plt.ylabel("Number of Ratings")
-
     plt.tight_layout()
+    plt.show()
+
+    ranks = np.arange(1, len(movie_popularity) + 1)
+    plt.loglog(ranks, popularity_sorted.to_numpy())
+    plt.title("Movie Popularity - (log-log)")
+    plt.xlabel("Movies (Ranked by Popularity, log scale)")
+    plt.ylabel("Number of Ratings (log scale)")
     plt.show()
 
 
@@ -164,6 +171,15 @@ def show_user_activity(ratings):
     plt.ylabel("Number of Users")
 
     plt.tight_layout()
+    plt.show()
+
+
+    bins = np.logspace(np.log10(user_activity.min()), np.log10(user_activity.max()), 40)
+    plt.hist(user_activity, bins=bins)
+    plt.xscale("log")
+    plt.title("Ratings per User (log)")
+    plt.xlabel("Number of Ratings (log scale)")
+    plt.ylabel("Number of Users")
     plt.show()
 
 
