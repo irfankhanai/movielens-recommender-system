@@ -74,6 +74,7 @@ def main() -> None:
 
     # Treat ratings >= 4 as positive feedback
     positive = train[train["rating"] >= 4]
+    eval_users = set(positive["user_id"])
 
     movie_ids = movies["movie_id"].unique()
     movie_idx = {m: i for i, m in enumerate(movie_ids)}
@@ -95,13 +96,13 @@ def main() -> None:
     # Evaluate baseline models
     results = {
         "Popular (All)": eval.evaluate(
-            lambda u: base.recommend_popular(u, train, popular_all), val, len(movies)
+            lambda u: base.recommend_popular(u, train, popular_all), val, len(movies), eval_users
         ),
         "Popular (Positive)": eval.evaluate(
-            lambda u: base.recommend_popular(u, train, popular_positive), val, len(movies)
+            lambda u: base.recommend_popular(u, train, popular_positive), val, len(movies), eval_users
         ),
         f"Item-kNN (k={k})": eval.evaluate(
-            lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, cos_similarity, train, movies), val, len(movies)
+            lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, cos_similarity, train, movies), val, len(movies), eval_users
         )
     }
 
@@ -123,10 +124,10 @@ def main() -> None:
     for method, sim in methods.items():
         similarity = sim
 
-        for k in [10, 20, 30]:
+        for k in [5, 10, 20, 30, 40, 50]:
             neighbors = np.argsort(similarity, axis=1)[:, -k:]
             metrics = eval.evaluate(
-                lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, similarity, train, movies), val, len(movies)
+                lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, similarity, train, movies), val, len(movies), eval_users
             )
             tuning.append([method, k, *metrics])
 
@@ -143,30 +144,39 @@ def main() -> None:
     k = int(best["k"])
     neighbors = np.argsort(similarity, axis=1)[:, -k:]
 
-    logging.info(f"Best model: {best['Similarity']}, k = {k}")
+    logging.info(f"Best model: {best["Similarity"]}, k = {k}")
 
 
     ######################################   EVALUATION ON TEST DATA   #################################################
 
     # Evaluate on test data
-    test_results = {
-        "Popular (All)": eval.evaluate(
-            lambda u: base.recommend_popular(u, train, popular_all), test, len(movies)
-        ),
-        "Popular (Positive)": eval.evaluate(
-            lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies)
-        ),
-        f"Item-kNN ({best['Similarity']}, k = {k})": eval.evaluate(
-            lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, similarity, train, movies), test, len(movies)
-        )
-    }
+    test_frames = []
+    for label, users in [("positive_history", eval_users), ("all_users", None)]:
+        test_results = {
+            "Popular (All)": eval.evaluate(
+                lambda u: base.recommend_popular(u, train, popular_all), test, len(movies), users
+            ),
+            "Popular (Positive)": eval.evaluate(
+                lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies), users
+            ),
+            f"Item-kNN ({best["Similarity"]}, k = {k})": eval.evaluate(
+                lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx, neighbors, similarity, train, movies),
+                test, len(movies), users
+            )
+        }
 
-    test_df = pd.DataFrame(
-        test_results,
-        index=["Precision@10", "Recall@10", "NDCG@10", "Coverage"]
-    ).T
+        test_df = pd.DataFrame(
+            test_results,
+            index=["Precision@10", "Recall@10", "NDCG@10", "Coverage"]
+        ).T
+        test_df.insert(0, "Users", label)
+        test_frames.append(test_df)
 
-    logging.info(f"--------- Logging the evaluation metrics on the test dataset: ---------\n{test_df.round(4)}")
+        logging.info(
+            f"--------- Logging the evaluation metrics on the test dataset ({label}): ---------\n{test_df.round(4)}")
+
+    test_df = pd.concat(test_frames)
+    test_df.index.name = "Model"
 
     ########################################   SAVING THE RESULTS   ####################################################
 

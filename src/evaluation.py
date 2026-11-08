@@ -2,12 +2,13 @@
 import numpy as np
 
 
-def evaluate(recommend_fn, dataset, n_movies):
+def evaluate(recommend_fn, dataset, n_movies, eval_users=None):
     """
     Evaluate the recommendation function, and return the precision, recall, ndcg and catalogue coverage.
     :param recommend_fn: Recommendation function
     :param dataset: The relevant dataset (train, test or val)
     :param n_movies: Total number of movies
+    :param eval_users: Optional set of user ids to evaluate. If None, every user with a relevant rating is evaluated
     :return: Precision, recall, ndcg and catalogue coverage.
     """
     relevant = (
@@ -16,6 +17,10 @@ def evaluate(recommend_fn, dataset, n_movies):
         .apply(set)
         .to_dict()
     )
+
+    # Needed when we want to filter out users with no history in the relevant split:
+    if eval_users is not None:
+        relevant = {user: actual for user, actual in relevant.items() if user in eval_users}
 
     precision, recall, ndcg = [], [], []
     recommended_movies = set()
