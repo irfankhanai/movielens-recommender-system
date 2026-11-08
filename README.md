@@ -33,9 +33,25 @@ movielens-recommender-system/
 
 ## Getting the data
 
-Download **MovieLens 1M** from https://grouplens.org/datasets/movielens/1m/
+Raw data is excluded from Git. Each teammate should do this after cloning:
 
+1. Open the official [MovieLens 1M page](https://grouplens.org/datasets/movielens/1m/).
+2. Download **ml-1m.zip** and extract it.
+3. Put the extracted **ml-1m** folder inside the repository's **data** folder.
 
+Expected files:
+
+```text
+data/ml-1m/movies.dat
+data/ml-1m/ratings.dat
+data/ml-1m/users.dat
+```
+
+Read the dataset's included README for usage terms and citation information.
+Run the commands below from the repository root. If the files are already
+directly in data/, use --data-dir ./data instead.
+
+## Install dependencies
 
 ```bash
 python -m venv .venv
