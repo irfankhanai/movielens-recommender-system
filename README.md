@@ -21,10 +21,13 @@ movielens-recommender-system/
 │   ├── baselines.py
 │   ├── models.py
 │   └── evaluation.py
-├── experiments/          # Experiment configuration/scripts
-├── results/              # Required output tables and plots
-├── report/               # One evolving course report
-├── slides/               # Week 7 examination slides
+├── results/              
+│   ├── plots/            # Plot outputs
+│   ├── knn_tuning.csv    # Outputs of the kNN tuning runs
+│   └── test_results.csv  # Outputs of the final test result
+├── reports/             
+│   ├── Recommender_Systems_Report_Group_9_Part_One.docx  # One evolving course report
+│   └── Recommender_Systems_Results_Group_9.xlsm          # One evolving project results
 ├── run_all.py            # Experiment entry point
 ├── requirements.txt      # Pinned, locally verified dependencies
 ├── .gitignore
@@ -98,3 +101,9 @@ Model column.
 
 Raw MovieLens files are ignored by Git. Download and extract them locally;
 untracking them does not remove copies from earlier Git history.
+
+## Report Links
+
+Link of the report: https://1drv.ms/w/c/177f4cc807f3bf5e/IQD5x2IMgCwRRI5CtYQvwgJfASXGNfXRLlU4diSGVNa_t_Q?e=38vRHh
+
+Link of the Excel sheet for the results: https://1drv.ms/x/c/177f4cc807f3bf5e/IQATyvUshz6gQ6-Ho7eYhV1xAZfoiG5a2xt3-WPx0-gvNgc?e=KIDiKW
