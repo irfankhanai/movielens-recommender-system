@@ -9,17 +9,14 @@ import logging
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
-MOVIES_PATH = DATA_DIR / "movies.dat"
-USERS_PATH = DATA_DIR / "users.dat"
-RATINGS_PATH = DATA_DIR / "ratings.dat"
 
 
-def get_movies():
+def get_movies(data_dir=DATA_DIR):
     """
     :return: Returns the movies dataset
     """
     return pd.read_csv(
-        MOVIES_PATH,
+        Path(data_dir) / "movies.dat",
         sep="::",
         engine="python",
         names=["movie_id", "title", "genres"],
@@ -27,24 +24,24 @@ def get_movies():
     )
 
 
-def get_ratings():
+def get_ratings(data_dir=DATA_DIR):
     """
     :return: Returns the ratings dataset
     """
     return pd.read_csv(
-        RATINGS_PATH,
+        Path(data_dir) / "ratings.dat",
         sep="::",
         engine="python",
         names=["user_id", "movie_id", "rating", "timestamp"],
     )
 
 
-def get_users():
+def get_users(data_dir=DATA_DIR):
     """
     :return: Returns the users dataset
     """
     return pd.read_csv(
-        USERS_PATH,
+        Path(data_dir) / "users.dat",
         sep="::",
         engine="python",
         names=["user_id", "gender", "age", "occupation", "zip_code"],
@@ -52,12 +49,12 @@ def get_users():
     )
 
 
-def get_data():
+def get_data(data_dir=DATA_DIR):
     """
     Returns the datasets, and prints their shape
     :return: Movies, Ratings, Users datasets
     """
-    return get_movies(), get_ratings(), get_users()
+    return get_movies(data_dir), get_ratings(data_dir), get_users(data_dir)
 
 
 def split_data(ratings):
@@ -76,8 +73,8 @@ def split_data(ratings):
     timestamp_val = int(df["timestamp"].quantile(0.80))
     timestamp_test = int(df["timestamp"].quantile(0.90))
 
-    logging.info(f"Validation split happens at: {pd.to_datetime(timestamp_val, unit="s", utc=True)}")
-    logging.info(f"Test split happens at: {pd.to_datetime(timestamp_test, unit="s", utc=True)}")
+    logging.info(f"Validation split happens at: {pd.to_datetime(timestamp_val, unit='s', utc=True)}")
+    logging.info(f"Test split happens at: {pd.to_datetime(timestamp_test, unit='s', utc=True)}")
 
     # Global Temporal 80/10/10 split
     train = df[df["timestamp"] < timestamp_val].copy()

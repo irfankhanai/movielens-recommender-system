@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local datasets and verification outputs
+data/**/*.dat
+data/**/*.zip
+.uv-cache/
+.verification/

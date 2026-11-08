@@ -3,6 +3,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import logging
+from pathlib import Path
+
+
+def save_plot(name, output_dir=None, show=True):
+    """Save the current figure and optionally display it, then release it."""
+    if output_dir is not None:
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        plt.savefig(Path(output_dir) / f"{name}.png", dpi=150, bbox_inches="tight")
+    if show:
+        plt.show()
+    plt.close()
+
 
 
 def print_statistics(movies, ratings, users):
@@ -31,7 +43,7 @@ def print_statistics(movies, ratings, users):
     logging.info(f"Dataset Density (adjusted): {density_adjusted:.2f}%")
 
 
-def show_rating_distribution(ratings):
+def show_rating_distribution(ratings, output_dir=None, show=True):
     """
     Calculate and show the rating distribution
     :param ratings: Rating dataset
@@ -63,10 +75,10 @@ def show_rating_distribution(ratings):
     plt.title("MovieLens 1M - Rating Distribution")
     plt.xticks([1, 2, 3, 4, 5])
     plt.tight_layout()
-    plt.show()
+    save_plot("rating_distribution", output_dir, show)
 
 
-def show_movie_popularity(ratings):
+def show_movie_popularity(ratings, output_dir=None, show=True):
     """
     Calculate and show the movie popularity (long-tail distribution)
     :param ratings: Rating dataset
@@ -113,17 +125,17 @@ def show_movie_popularity(ratings):
     plt.xlabel("Movies (Ranked by Popularity)")
     plt.ylabel("Number of Ratings")
     plt.tight_layout()
-    plt.show()
+    save_plot("movie_popularity", output_dir, show)
 
     ranks = np.arange(1, len(movie_popularity) + 1)
     plt.loglog(ranks, popularity_sorted.to_numpy())
     plt.title("Movie Popularity - (log-log)")
     plt.xlabel("Movies (Ranked by Popularity, log scale)")
     plt.ylabel("Number of Ratings (log scale)")
-    plt.show()
+    save_plot("movie_popularity_log", output_dir, show)
 
 
-def show_user_activity(ratings):
+def show_user_activity(ratings, output_dir=None, show=True):
     """
     Calculate and show the user activity (long-tail distribution)
     :param ratings: Rating dataset
@@ -171,7 +183,7 @@ def show_user_activity(ratings):
     plt.ylabel("Number of Users")
 
     plt.tight_layout()
-    plt.show()
+    save_plot("user_activity", output_dir, show)
 
 
     bins = np.logspace(np.log10(user_activity.min()), np.log10(user_activity.max()), 40)
@@ -180,10 +192,10 @@ def show_user_activity(ratings):
     plt.title("Ratings per User (log)")
     plt.xlabel("Number of Ratings (log scale)")
     plt.ylabel("Number of Users")
-    plt.show()
+    save_plot("user_activity_log", output_dir, show)
 
 
-def show_rating_activity(ratings):
+def show_rating_activity(ratings, output_dir=None, show=True):
     """
     Calculate and show the rating activity
     :param ratings: Rating dataset
@@ -228,7 +240,7 @@ def show_rating_activity(ratings):
     plt.xlabel("Date")
     plt.ylabel("Number of Ratings")
     plt.tight_layout()
-    plt.show()
+    save_plot("rating_activity", output_dir, show)
 
 
 def show_binary_feedback_statistics(ratings, movies, users, threshold=4):
@@ -287,7 +299,7 @@ def show_binary_feedback_statistics(ratings, movies, users, threshold=4):
         logging.info(f"Popularity (all) vs (positive), top {n} overlap: {overlap * 100:.0f}%")
 
 
-def show_statistics(movies, ratings, users):
+def show_statistics(movies, ratings, users, output_dir=None, show=True):
     """
     Show all the statistics regarding the dataset, namely:
         - Print statistics
@@ -298,7 +310,7 @@ def show_statistics(movies, ratings, users):
     :return:
     """
     print_statistics(movies, ratings, users)
-    show_rating_distribution(ratings)
-    show_movie_popularity(ratings)
-    show_user_activity(ratings)
-    show_rating_activity(ratings)
+    show_rating_distribution(ratings, output_dir, show)
+    show_movie_popularity(ratings, output_dir, show)
+    show_user_activity(ratings, output_dir, show)
+    show_rating_activity(ratings, output_dir, show)

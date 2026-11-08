@@ -1,4 +1,4 @@
-"""Project entry point (starter placeholder; no experiments implemented yet).
+"""Run the MovieLens baseline experiments.
 
 Final target:
     python run_all.py --data-dir ./data/ml-1m
@@ -21,15 +21,26 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Reproduce MovieLens recommender experiments")
     parser.add_argument("--data-dir", type=Path, required=True, help="Path to extracted ml-1m data")
+    parser.add_argument("--output-dir", type=Path, default=Path("results"),
+                        help="Directory for CSV tables and plots")
+    parser.add_argument("--show-plots", action="store_true",
+                        help="Also display plots interactively")
     args = parser.parse_args()
     if not args.data_dir.is_dir():
         parser.error(f"Dataset directory does not exist: {args.data_dir}")
+
+    for filename in ("movies.dat", "ratings.dat", "users.dat"):
+        if not (args.data_dir / filename).is_file():
+            parser.error(f"Missing dataset file: {args.data_dir / filename}")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    if not args.show_plots:
+        analysis.plt.switch_backend("Agg")
 
     ##########################################   PREPROCESSING AND ANALYSIS   ##########################################
 
 
     # Load the datasets, and print their sizes
-    movies, ratings, users = pp.get_data()
+    movies, ratings, users = pp.get_data(args.data_dir)
     logging.info(f"Movies: {movies.shape}")
     logging.info(f"Ratings: {ratings.shape}")
     logging.info(f"Users: {users.shape}")
@@ -38,7 +49,7 @@ def main() -> None:
 
 
     # Show the relevant statistics regarding the datasets
-    analysis.show_statistics(movies, ratings, users)
+    analysis.show_statistics(movies, ratings, users, args.output_dir / "plots", args.show_plots)
 
 
     # Split the ratings dataset into training, validation
@@ -132,7 +143,7 @@ def main() -> None:
     k = int(best["k"])
     neighbors = np.argsort(similarity, axis=1)[:, -k:]
 
-    logging.info(f"Best model: {best["Similarity"]}, k = {k}")
+    logging.info(f"Best model: {best['Similarity']}, k = {k}")
 
 
     ######################################   EVALUATION ON TEST DATA   #################################################
@@ -145,7 +156,7 @@ def main() -> None:
         "Popular (Positive)": eval.evaluate(
             lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies)
         ),
-        f"Item-kNN ({best["Similarity"]}, k = {k})": eval.evaluate(
+        f"Item-kNN ({best['Similarity']}, k = {k})": eval.evaluate(
             lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, similarity, train, movies), test, len(movies)
         )
     }
@@ -160,13 +171,14 @@ def main() -> None:
     ########################################   SAVING THE RESULTS   ####################################################
 
     # Create results folder
-    Path("results").mkdir(exist_ok=True)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Save final test results
-    test_df.to_csv("results/test_results.csv")
+    test_df.to_csv(args.output_dir / "test_results.csv", index_label="Model")
+    results_df.to_csv(args.output_dir / "validation_results.csv", index_label="Model")
 
     # Save kNN tuning results
-    tuning_df.to_csv("results/knn_tuning.csv", index=False)
+    tuning_df.to_csv(args.output_dir / "knn_tuning.csv", index=False)
 
     logging.info(f"Results saved successfully!")
 

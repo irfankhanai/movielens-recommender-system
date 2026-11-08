@@ -25,8 +25,8 @@ movielens-recommender-system/
 ├── results/              # Required output tables and plots
 ├── report/               # One evolving course report
 ├── slides/               # Week 7 examination slides
-├── run_all.py            # Entry point (starter placeholder)
-├── requirements.txt      # Pin dependencies when selected
+├── run_all.py            # Experiment entry point
+├── requirements.txt      # Pinned, locally verified dependencies
 ├── .gitignore
 └── README.md
 ```
@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 ## Reproduce results
 
-The intended final command is:
+Run with the directory containing movies.dat, ratings.dat, and users.dat:
 
 ```bash
 python run_all.py --data-dir ./data/ml-1m
@@ -62,3 +62,23 @@ python run_all.py --data-dir ./data/ml-1m
 - Member 1: Irfan Khan / 153218338 / GitHub: Irfankhanai
 - Member 2: Kaan Pide / 152267623 / GitHub: klsaerf
 - Member 3: Reinis Gustavs Ignatjevs / 152215565 / GitHub: ExtraAngel
+
+## Outputs and environment
+
+The pinned dependencies were verified with Python 3.14. The source avoids
+Python 3.12-only f-string syntax; older interpreters may need different package versions.
+
+For files directly inside this checkout's data directory, run:
+
+```bash
+python run_all.py --data-dir ./data
+```
+
+By default the command saves six PNG plots in results/plots and writes
+test_results.csv, validation_results.csv, and knn_tuning.csv.
+Use --output-dir PATH to choose another output location and --show-plots
+to also open interactive figures. Test and validation CSVs have an explicit
+Model column.
+
+Raw MovieLens files are ignored by Git. Download and extract them locally;
+untracking them does not remove copies from earlier Git history.
