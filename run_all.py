@@ -68,6 +68,7 @@ def main() -> None:
     movie_idx = {m: i for i, m in enumerate(movie_ids)}
 
     cos_similarity, X = pp.get_cosine_similarity(train, movies, users)
+    analysis.show_binary_feedback_statistics(ratings, movies, users, 4)
 
     k = 20
     neighbors = np.argsort(cos_similarity, axis=1)[:, -k:]

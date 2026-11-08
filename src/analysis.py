@@ -231,6 +231,62 @@ def show_rating_activity(ratings):
     plt.show()
 
 
+def show_binary_feedback_statistics(ratings, movies, users, threshold=4):
+    """
+    Show how the data looks after the feedback treatment (keeping only ratings >= threshold)
+    :param ratings: Rating dataset the treatment is applied to (e.g. the training set)
+    :param movies: Movies dataset
+    :param users: Users dataset
+    :param threshold: Minimum rating counted as positive
+    :return:
+    """
+    logging.info(f"--------- Logging the binary feedback statistics (rating >= {threshold}): ---------")
+
+    positive = ratings[ratings["rating"] >= threshold]
+
+    n_ratings = len(ratings)
+    n_positive = len(positive)
+    n_users = len(users)
+    n_movies = movies["movie_id"].nunique()
+
+    # What the treatment removes
+    logging.info(f"Ratings: {n_ratings}, positive: {n_positive} ({n_positive / n_ratings * 100:.2f}%)")
+    dropped = ratings[ratings["rating"] < threshold]["rating"].value_counts().sort_index()
+    for score, n in dropped.items():
+        logging.info(f"Rating {score} dropped: {n} ({n / n_ratings * 100:.2f}% of ratings)")
+
+    density_before = n_ratings / (n_users * n_movies) * 100
+    density_after = n_positive / (n_users * n_movies) * 100
+    logging.info(f"Density (all movies): {density_before:.2f}% -> {density_after:.2f}%")
+
+    # What it does to users
+    user_all = ratings.groupby("user_id").size()
+    user_pos = positive.groupby("user_id").size().reindex(user_all.index, fill_value=0)
+
+    logging.info(f"Users with a rating: {len(user_all)}, with no positive rating: {(user_pos == 0).sum()}")
+    logging.info(f"Median per user: {user_all.median():.0f} ratings -> {user_pos.median():.0f} positives")
+    logging.info(f"Users with < 5 positives: {(user_pos < 5).sum()} ({(user_pos < 5).mean() * 100:.2f}%)")
+
+    # What it does to movies
+    movie_all = ratings.groupby("movie_id").size()
+    movie_pos = positive.groupby("movie_id").size().reindex(movie_all.index, fill_value=0)
+
+    logging.info(f"Movies with no positive rating: {n_movies - positive['movie_id'].nunique()} of {n_movies}")
+    logging.info(f"Median per movie: {movie_all.median():.1f} ratings -> {movie_pos.median():.1f} positives")
+    for thr in [10, 30]:
+        before = (movie_all < thr).sum()
+        after = (movie_pos < thr).sum()
+        logging.info(f"Movies with < {thr}: {before} ({before / len(movie_all) * 100:.2f}%) "
+                     f"-> {after} ({after / len(movie_all) * 100:.2f}%)")
+
+    # Do the two popularity variants differ?
+    top_all = movie_all.sort_values(ascending=False, kind="stable")
+    top_pos = movie_pos.sort_values(ascending=False, kind="stable")
+    for n in [10, 100]:
+        overlap = len(set(top_all.head(n).index) & set(top_pos.head(n).index)) / n
+        logging.info(f"Popularity (all) vs (positive), top {n} overlap: {overlap * 100:.0f}%")
+
+
 def show_statistics(movies, ratings, users):
     """
     Show all the statistics regarding the dataset, namely:
