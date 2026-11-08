@@ -21,21 +21,40 @@ movielens-recommender-system/
 │   ├── baselines.py
 │   ├── models.py
 │   └── evaluation.py
-├── experiments/          # Experiment configuration/scripts
-├── results/              # Required output tables and plots
-├── report/               # One evolving course report
-├── slides/               # Week 7 examination slides
-├── run_all.py            # Entry point (starter placeholder)
-├── requirements.txt      # Pin dependencies when selected
+├── results/              
+│   ├── plots/            # Plot outputs
+│   ├── knn_tuning.csv    # Outputs of the kNN tuning runs
+│   └── test_results.csv  # Outputs of the final test result
+├── reports/             
+│   ├── Recommender_Systems_Report_Group_9_Part_One.docx  # One evolving course report
+│   └── Recommender_Systems_Results_Group_9.xlsm          # One evolving project results
+├── run_all.py            # Experiment entry point
+├── requirements.txt      # Pinned, locally verified dependencies
 ├── .gitignore
 └── README.md
 ```
 
 ## Getting the data
 
-Download **MovieLens 1M** from https://grouplens.org/datasets/movielens/1m/
+Raw data is excluded from Git. Each teammate should do this after cloning:
 
+1. Open the official [MovieLens 1M page](https://grouplens.org/datasets/movielens/1m/).
+2. Download **ml-1m.zip** and extract it.
+3. Put the extracted **ml-1m** folder inside the repository's **data** folder.
 
+Expected files:
+
+```text
+data/ml-1m/movies.dat
+data/ml-1m/ratings.dat
+data/ml-1m/users.dat
+```
+
+Read the dataset's included README for usage terms and citation information.
+Run the commands below from the repository root. If the files are already
+directly in data/, use --data-dir ./data instead.
+
+## Install dependencies
 
 ```bash
 python -m venv .venv
@@ -48,7 +67,7 @@ pip install -r requirements.txt
 
 ## Reproduce results
 
-The intended final command is:
+Run with the directory containing movies.dat, ratings.dat, and users.dat:
 
 ```bash
 python run_all.py --data-dir ./data/ml-1m
@@ -59,6 +78,32 @@ python run_all.py --data-dir ./data/ml-1m
 
 ## Team
 
-- Member 1: Irfan Khan / 153218338 / GitHub:Irfankhanai
-- Member 2: [name / GitHub username]
-- Member 3: [name / GitHub username]
+- Member 1: Irfan Khan / 153218338 / GitHub: Irfankhanai
+- Member 2: Kaan Pide / 152267623 / GitHub: klsaerf
+- Member 3: Reinis Gustavs Ignatjevs / 152215565 / GitHub: ExtraAngel
+
+## Outputs and environment
+
+The pinned dependencies were verified with Python 3.14. The source avoids
+Python 3.12-only f-string syntax; older interpreters may need different package versions.
+
+For files directly inside this checkout's data directory, run:
+
+```bash
+python run_all.py --data-dir ./data
+```
+
+By default the command saves six PNG plots in results/plots and writes
+test_results.csv, validation_results.csv, and knn_tuning.csv.
+Use --output-dir PATH to choose another output location and --show-plots
+to also open interactive figures. Test and validation CSVs have an explicit
+Model column.
+
+Raw MovieLens files are ignored by Git. Download and extract them locally;
+untracking them does not remove copies from earlier Git history.
+
+## Report Links
+
+Link of the report: https://1drv.ms/w/c/177f4cc807f3bf5e/IQD5x2IMgCwRRI5CtYQvwgJfASXGNfXRLlU4diSGVNa_t_Q?e=38vRHh
+
+Link of the Excel sheet for the results: https://1drv.ms/x/c/177f4cc807f3bf5e/IQATyvUshz6gQ6-Ho7eYhV1xAZfoiG5a2xt3-WPx0-gvNgc?e=KIDiKW
