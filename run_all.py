@@ -173,7 +173,7 @@ def main() -> None:
         test_frames.append(test_df)
 
         logging.info(
-            f"--------- Logging the evaluation metrics on the test dataset ({label}): ---------\n{test_df.round(4)}")
+            f"--------- Logging the evaluation metrics on the test dataset ({label}): ---------\n{test_df.round(4).to_string()}")
 
     test_df = pd.concat(test_frames)
     test_df.index.name = "Model"
