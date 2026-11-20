@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "bootstrap_repeats": 2000,
+  "sign_flip_repeats": 10000,
+  "python": "3.14.6",
+  "split_sizes": {
+    "train": 800164,
+    "validation": 100024,
+    "test": 100021
+  },
+  "activity_threshold": 86.0,
+  "test_time_threshold": 993074159,
+  "track": "A: diversity and popularity bias; planned MMR using genres",
+  "files_sha256": {
+    "ratings.dat": "506d64ca44484487c11dc2d9a28de5c54948213e6b96285e298afe28d6ea4e0f",
+    "movies.dat": "0140fc2356357c1a851d0f52e893a1e4d3696df632c4141cea8d5bc3d621f0b9",
+    "users.dat": "1dc3a95300cb19f7c10e027daf29b8cdf1d908dab65b5edfb45950aa389a10a3"
+  }
+}
