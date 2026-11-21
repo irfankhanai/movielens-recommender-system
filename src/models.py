@@ -2,6 +2,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+import logging
 
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -11,7 +12,9 @@ from torch.utils.data import DataLoader, TensorDataset
 
 # TEMPORARY data processing first:
 
-from src.preprocessing import get_ratings, split_data
+from src.preprocessing import split_data
+import copy
+from src import evaluation as evaluation
 from scipy.sparse import csr_matrix
 import pandas as pd
 import numpy as np
@@ -107,7 +110,7 @@ def vae_loss(logits, x, mean, log_var, beta):
     return reconstruction_loss + beta * kl, reconstruction_loss, kl
 
 class MultiVAE(nn.Module):
-    def __init__(self, n_items=3706, hidden_dim = 500, latent_dim=100, dropout=0.5):
+    def __init__(self, n_items, hidden_dim = 500, latent_dim=100, dropout=0.5):
         # TODO: normalisation
         super().__init__()
 
@@ -128,7 +131,8 @@ class MultiVAE(nn.Module):
         )
 
     def forward(self, X):
-        h = self.encoder(X)
+        norm_X = F.normalize(X) # Each user row has length 1
+        h = self.encoder(norm_X)
 
         mean = self.mean(h)
         log_var = self.log_var(h)
@@ -214,3 +218,50 @@ def make_recommend_fn(scores, movie_ids, n=10):
         top_columns = np.argsort(-scores[user_id - 1])[:n]
         return movie_ids[top_columns].tolist()
     return recommend
+
+
+def train_multi_vae(data, n_movies, hidden_dim=500, latent_dim=100, dropout=0.5,
+                    lr=1e-3, batch_size=128, anneal_cap=0.2, anneal_steps=20000,
+                    max_epochs=200, patience=20, seed=42):
+    """
+    Train a MultiVAE with early stopping on validation NDCG@10.
+    :param data: Dictionary from get_multi_vae_data
+    :param n_movies: Total number of movies (for catalogue coverage)
+    :return: The model with the best validation weights, and a per-epoch history
+    """
+    torch.manual_seed(seed)
+    model = MultiVAE(n_items=data["X_train"].shape[1], hidden_dim=hidden_dim,
+                     latent_dim=latent_dim, dropout=dropout)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    train_loader = get_train_loader(data["X_train"], data["train_rows"], batch_size, seed)
+    eval_users = set(data["train_rows"] + 1)
+
+    step, best_ndcg, best_state, epochs_without_improvement = 0, -1.0, None, 0
+    history = []
+
+    for epoch in range(1, max_epochs + 1):
+        loss, recon, kl, step, beta = train_one_epoch(
+            model, train_loader, optimizer, step, anneal_cap, anneal_steps)
+
+        scores = score_all_users(model, data["X_train"], data["seen_train"])
+        precision, recall, ndcg, coverage = evaluation.evaluate(
+            make_recommend_fn(scores, data["movie_ids"]), data["val"], n_movies, eval_users)
+
+        history.append([epoch, loss, recon, kl, beta, precision, recall, ndcg, coverage])
+        logging.info(f"epoch {epoch:3d}  loss {loss:.2f}  beta {beta:.3f}  "
+                     f"val NDCG@10 {ndcg:.4f}  R@10 {recall:.4f}")
+
+        if ndcg > best_ndcg:
+            best_ndcg = ndcg
+            best_state = copy.deepcopy(model.state_dict())
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
+            if epochs_without_improvement >= patience:
+                logging.info(f"Early stopping at epoch {epoch}, best val NDCG@10 {best_ndcg:.4f}")
+                break
+
+    model.load_state_dict(best_state)
+    history_df = pd.DataFrame(history, columns=["epoch", "loss", "recon", "kl", "beta",
+                                                "Precision", "Recall", "NDCG", "Coverage"])
+    return model, history_df
