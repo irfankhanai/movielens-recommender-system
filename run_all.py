@@ -14,6 +14,7 @@ from src import preprocessing as pp
 from src import analysis as analysis
 from src import baselines as base
 from src import evaluation as eval
+from src import models as md
 
 
 def main() -> None:
@@ -86,11 +87,15 @@ def main() -> None:
     k = 20
     neighbors = np.argsort(cos_similarity, axis=1)[:, -k:]
 
+    gen_sim, _ = md.create_genre_matrix(movies)
+
     # Example recommendations for User 1
     logging.info(f"--------- Logging the example recommendations based on the training set for the User 1: ---------")
-    logging.info(f"All Ratings: {base.recommend_popular(1, train, popular_all, n=10)}")
-    logging.info(f"Positive Ratings: {base.recommend_popular(1, train, popular_positive, n=10)}")
-    logging.info(f"Item-based kNN: {base.recommend_knn(1, positive, movie_ids, movie_idx, neighbors, cos_similarity, train, movies, n=10)}")
+    logging.info(f"All Ratings: {[movies[movies["movie_id"] == i]["title"].values[0] for i in base.recommend_popular(1, ratings, popular_all, n=10)]}")
+    logging.info(f"Positive Ratings: {[movies[movies["movie_id"] == i]["title"].values[0] for i in base.recommend_popular(1, ratings, popular_positive, n=10)]}")
+    logging.info(f"Item-based kNN: {[movies[movies["movie_id"] == i]["title"].values[0] for i in base.recommend_knn(1, positive, movie_ids, movie_idx, neighbors, cos_similarity, ratings, movies, n=10)]}")
+    # logging.info(f"Content based, non-unique genres: {[movies[movies["movie_id"] == i]["title"].values[0] for i in md.content_based_recommendation(1, movies, ratings, gen_sim)]}")
+    logging.info(f"Content based, unique genres: {[movies[movies["movie_id"] == i]["title"].values[0] for i in md.content_based_recommendation(1, movies, ratings, gen_sim, diversify=True)]}")
 
     ##################################################   EVALUATION   ##################################################
 
@@ -104,6 +109,12 @@ def main() -> None:
         ),
         f"Item-kNN (k={k})": eval.evaluate(
             lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx,neighbors, cos_similarity, train, movies), val, len(movies), eval_users
+        ),
+        # "Content based, non-unique genres": eval.evaluate(
+        #     lambda u: md.content_based_recommendation(u, movies, train, gen_sim), val, len(movies), eval_users
+        # ),
+        "Content based, unique genres": eval.evaluate(
+            lambda u: md.content_based_recommendation(u, movies, train, gen_sim, diversify=True), val, len(movies), eval_users
         )
     }
 
@@ -147,7 +158,6 @@ def main() -> None:
 
     logging.info(f"Best model: {best["Similarity"]}, k = {k}")
 
-
     ######################################   EVALUATION ON TEST DATA   #################################################
 
     # Evaluate on test data
@@ -163,6 +173,12 @@ def main() -> None:
             f"Item-kNN ({best["Similarity"]}, k = {k})": eval.evaluate(
                 lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx, neighbors, similarity, train, movies),
                 test, len(movies), users
+            ),
+            # "Content based, non-unique genres": eval.evaluate(
+            #     lambda u: md.content_based_recommendation(u, movies, train, gen_sim), test, len(movies), users
+            # ),
+            "Content based, unique genres": eval.evaluate(
+                lambda u: md.content_based_recommendation(u, movies, train, gen_sim, diversify=True), test, len(movies), users
             )
         }
 
