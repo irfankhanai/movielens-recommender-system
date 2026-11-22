@@ -199,18 +199,18 @@ def main() -> None:
         test_results = {
             "Popular (All)": eval.evaluate(
                 lambda u: base.recommend_popular(u, train, popular_all), test, len(movies),
-                user_set, show_completion=True
+                user_set
             ),
             "Popular (Positive)": eval.evaluate(
                 lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies),
-                user_set, show_completion=True
+                user_set
             ),
             f"Item-kNN ({best["Similarity"]}, k = {k})": eval.evaluate(
                 lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx, neighbors, similarity, train, movies),
-                test, len(movies), user_set, show_completion=True
+                test, len(movies), user_set
             ),
             "Multi-VAE": eval.evaluate(
-                vae_recommend, test, len(movies), user_set, show_completion=True
+                vae_recommend, test, len(movies), user_set
             ),
         }
 
