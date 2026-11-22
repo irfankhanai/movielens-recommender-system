@@ -16,15 +16,15 @@ TEST_QUANTILE = 0.90
 TOP_N = 10
 
 # Multi-VAE: architecture
-VAE_HIDDEN_DIM = 250
+VAE_HIDDEN_DIM = 300
 VAE_LATENT_DIM = 100
 VAE_DROPOUT = 0.5
 
 # Multi-VAE: training
-VAE_LEARNING_RATE = 1e-5
+VAE_LEARNING_RATE = 1e-4
 VAE_BATCH_SIZE = 128
 VAE_MAX_EPOCHS = 200
-VAE_PATIENCE = 20            # epochs without val improvement before stopping
+VAE_PATIENCE = 20           # epochs without val improvement before stopping
 
 # Multi-VAE: KL annealing
 VAE_ANNEAL_CAP = 0.3        # maximum beta
