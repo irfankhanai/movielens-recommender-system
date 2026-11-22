@@ -224,3 +224,7 @@ data/**/*.dat
 data/**/*.zip
 .uv-cache/
 .verification/
+data/ml-1m/
+# Part 1 outputs recreated by run_all.py (existing tracked result CSVs stay tracked).
+results/plots/
+results/validation_results.csv

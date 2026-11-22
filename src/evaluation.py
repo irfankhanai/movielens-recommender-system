@@ -1,14 +1,16 @@
 """Precision@10, Recall@10, NDCG@10, and catalogue coverage."""
 import numpy as np
+import logging
 
 
-def evaluate(recommend_fn, dataset, n_movies, eval_users=None):
+def evaluate(recommend_fn, dataset, n_movies, eval_users=None, show_completion=False):
     """
     Evaluate the recommendation function, and return the precision, recall, ndcg and catalogue coverage.
     :param recommend_fn: Recommendation function
     :param dataset: The relevant dataset (train, test or val)
     :param n_movies: Total number of movies
     :param eval_users: Optional set of user ids to evaluate. If None, every user with a relevant rating is evaluated
+    :param show_completion: Show completion percentage
     :return: Precision, recall, ndcg and catalogue coverage.
     """
     relevant = (
@@ -25,7 +27,17 @@ def evaluate(recommend_fn, dataset, n_movies, eval_users=None):
     precision, recall, ndcg = [], [], []
     recommended_movies = set()
 
+    count = 0
+    half_point = False
     for user, actual in relevant.items():
+        count += 1
+        if show_completion:
+            if count >= len(relevant) // 2 and not half_point:
+                logging.info(f"Function evaluated {count / len(relevant) * 100:.2f}%")
+                half_point = True
+            elif count == len(relevant):
+                logging.info(f"Function finished evaluating")
+
         predicted = recommend_fn(user)[:10]
         hits = [int(m in actual) for m in predicted]
 
