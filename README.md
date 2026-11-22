@@ -15,20 +15,28 @@ Build, evaluate, and compare movie recommendation methods. The project has three
 ```text
 movielens-recommender-system/
 ├── data/                 # Place local MovieLens 1M files here (not committed)
-├── src/                  # Data processing, baselines, models, evaluation
-│   ├── __init__.py
-│   ├── preprocessing.py
-│   ├── baselines.py
-│   ├── models.py
-│   └── evaluation.py
-├── results/              
-│   ├── plots/            # Plot outputs
-│   ├── knn_tuning.csv    # Outputs of the kNN tuning runs
-│   └── test_results.csv  # Outputs of the final test result
 ├── reports/             
 │   ├── Recommender_Systems_Report_Group_9.docx  # One evolving course report
-│   └── Recommender_Systems_Results_Group_9.xlsm          # One evolving project results
+│   └── Recommender_Systems_Results_Group_9.xlsm # One evolving project results
+├── results/              
+│   ├── part2/            # Part 2 results
+│   ├── knn_tuning.csv
+│   ├── test_results.csv
+│   ├── vae_history.csv
+│   └── validation_results.csv
+├── src/                  # Data processing, baselines, models, evaluation
+│   ├── __init__.py
+│   ├── analysis.py
+│   ├── baselines.py
+│   ├── config.py
+│   ├── evaluation.py
+│   ├── models.py
+│   ├── part2_evaluation.py
+│   └── evaluation.py
+├── tests/                # Small correctness tests
+│   └── test_part2.py
 ├── run_all.py            # Experiment entry point
+├── run_part2.py          # Part 2 specific entry point
 ├── requirements.txt      # Pinned, locally verified dependencies
 ├── .gitignore
 └── README.md
@@ -84,7 +92,7 @@ versions in `requirements.txt` reproduce the checked-in results. No new runtime
 dependencies are needed for Part 2. Run the small correctness checks with
 `python -m unittest discover -s tests -v`.
 
-## Part 2 on branch irfan
+## Part 2
 
 Exactly three new models are tested: user-kNN (neighbourhood CF), content profile
 matching (content-based), and a weighted hybrid. `ContentProfile` in
@@ -179,12 +187,6 @@ higher catalogue coverage (20.45%). At 20% data, positive popularity scores
 0.19789 versus item-kNN's 0.06668. Coverage alone therefore does not establish
 recommendation quality. The coarse content representation and noisier item
 similarities are plausible explanations, not proven causal findings.
-
-Part 3 track announced for this branch: **Track A, diversity and popularity
-bias**, with genre-based MMR planned. Part 3 is not implemented here.
-AI assistance is disclosed in the cumulative report. Contributions on teammates'
-separate branches are not included or attributed by this branch.
-
 
 
 
