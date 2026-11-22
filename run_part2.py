@@ -10,25 +10,37 @@ import numpy as np
 import pandas as pd
 
 from src.preprocessing import get_data, split_data
-from src.models import ModelData, ItemKNN, UserKNN, ContentProfile, Hybrid
+from src.models import ModelData, ItemKNN, UserKNN, ContentProfile, Hybrid, MultiVAERecommender
+from src import config as cfg
 from src.part2_evaluation import per_user, aggregate, mean_ci, paired_test
 
 SEED = 42
+# Multi-VAE settings from config.py; the grid below overrides lr, anneal_cap and hidden_dim.
+VAE_BASE = dict(hidden_dim=cfg.VAE_HIDDEN_DIM, latent_dim=cfg.VAE_LATENT_DIM,
+                dropout=cfg.VAE_DROPOUT, lr=cfg.VAE_LEARNING_RATE,
+                batch_size=cfg.VAE_BATCH_SIZE, anneal_cap=cfg.VAE_ANNEAL_CAP,
+                anneal_steps=cfg.VAE_ANNEAL_STEPS, max_epochs=cfg.VAE_MAX_EPOCHS,
+                patience=cfg.VAE_PATIENCE, seed=cfg.SEED)
+# Equal validation budget: 8 settings per tunable model.
 GRIDS = {
-    'Item-kNN': [dict(k=k, similarity=s) for s in ['Cosine', 'Jaccard'] for k in [20, 40]],
-    'User-kNN': [dict(k=k) for k in [10, 20, 40, 80]],
-    'Content': [dict(year_weight=w) for w in [0.1, 0.25, 0.5, 0.75]],
-    'Hybrid': [dict(alpha=a) for a in [0.25, 0.5, 0.75, 0.9]],
+    'Item-kNN': [dict(k=k, similarity=s) for s in ['Cosine', 'Jaccard'] for k in [10, 20, 40, 80]],
+    'User-kNN': [dict(k=k) for k in [10, 20, 40, 80, 120, 160, 200, 300]],
+    'Content': [dict(year_weight=w) for w in [0.0, 0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9]],
+    'Hybrid': [dict(alpha=a) for a in [0.1, 0.25, 0.4, 0.5, 0.6, 0.75, 0.9, 0.95]],
+    'Multi-VAE': [dict(VAE_BASE, lr=lr, anneal_cap=c, hidden_dim=h)
+                  for lr in [1e-4, 1e-3] for c in [0.2, 0.3] for h in [300, 600]],
 }
 PARADIGMS = {'Popular (All)': 'Popularity', 'Popular (Positive)': 'Popularity',
              'Item-kNN': 'Neighbourhood CF', 'User-kNN': 'Neighbourhood CF',
-             'Content': 'Content-based', 'Hybrid': 'Hybrid'}
+             'Content': 'Content-based', 'Hybrid': 'Hybrid', 'Multi-VAE': 'Neural'}
 
 
-def build(name, data, settings):
+def build(name, data, settings, val=None):
     if name.startswith('Popular'):
         counts = data.all_counts if name == 'Popular (All)' else data.popular
         return lambda u: data.rank(u, counts)
+    if name == 'Multi-VAE':  # needs the validation set for early stopping
+        return MultiVAERecommender(data, val, **settings).recommend
     cls = {'Item-kNN': ItemKNN, 'User-kNN': UserKNN, 'Content': ContentProfile, 'Hybrid': Hybrid}[name]
     return cls(data, **settings).recommend
 
@@ -56,7 +68,7 @@ def main(data_dir=None, output_dir=None):
         best_score = -np.inf
         for settings in grid:
             logging.info('Validation %s %s', name, settings)
-            scores = aggregate(per_user(build(name, data, settings), val, eligible), len(movies))
+            scores = aggregate(per_user(build(name, data, settings, val), val, eligible), len(movies))
             tuning.append({'Model': name, 'Settings': json.dumps(settings), **scores})
             if scores['NDCG@10'] > best_score:
                 selected[name], best_score = settings, scores['NDCG@10']
@@ -75,7 +87,7 @@ def main(data_dir=None, output_dir=None):
         fraction_frames = {}
         for name, settings in selected.items():
             logging.info('Test fraction=%s %s %s', fraction, name, settings)
-            recommend = build(name, data, settings)
+            recommend = build(name, data, settings, val)
             # Cache rankings once per model, reuse for period/cohort analyses.
             predictions = {u: recommend(u) for u in sorted(test.loc[test.rating >= 4, 'user_id'].unique())}
             frame_all = per_user(predictions.__getitem__, test)
@@ -94,7 +106,7 @@ def main(data_dir=None, output_dir=None):
                 lo, hi = mean_ci(evaluated['NDCG@10'])
                 overall.append({'Model': name, 'Paradigm': PARADIGMS[name],
                                 'Self-implemented?': ('Yes (designated core algorithm)' if name == 'Content' else
-                                                      'Yes' if name in ['User-kNN', 'Hybrid'] else 'Part 1 baseline'),
+                                                      'Yes' if name in ['User-kNN', 'Hybrid', 'Multi-VAE'] else 'Part 1 baseline'),
                                 'Key hyperparameters': json.dumps(settings),
                                 **aggregate(evaluated, len(movies)),
                                 'Variability / CI / test': f'User bootstrap NDCG 95% CI [{lo:.6f}, {hi:.6f}]; paired differences in paired_differences.csv',
@@ -123,7 +135,7 @@ def main(data_dir=None, output_dir=None):
                                 'CI lower': lo, 'CI upper': hi, 'Users': len(delta),
                                 'Paired sign-flip p': paired_test(delta)})
 
-    # Holm correction across all 15 planned comparisons (5 models x 3 sizes).
+    # Holm correction across all planned comparisons (every model vs Item-kNN x 3 sizes).
     order = sorted(range(len(differences)), key=lambda i: differences[i]['Paired sign-flip p'])
     adjusted = 0
     for rank, index in enumerate(order):
