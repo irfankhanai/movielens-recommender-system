@@ -192,20 +192,23 @@ def main() -> None:
     for label, user_set in [("positive_history", eval_users), ("all_users", None)]:
         test_results = {
             "Popular (All)": eval.evaluate(
-                lambda u: base.recommend_popular(u, train, popular_all), test, len(movies), user_set
+                lambda u: base.recommend_popular(u, train, popular_all), test, len(movies),
+                user_set, show_completion=True
             ),
             "Popular (Positive)": eval.evaluate(
-                lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies), user_set
+                lambda u: base.recommend_popular(u, train, popular_positive), test, len(movies),
+                user_set, show_completion=True
             ),
             f"Item-kNN ({best["Similarity"]}, k = {k})": eval.evaluate(
                 lambda u: base.recommend_knn(u, positive, movie_ids, movie_idx, neighbors, similarity, train, movies),
-                test, len(movies), user_set
+                test, len(movies), user_set, show_completion=True
             ),
             "Multi-VAE": eval.evaluate(
-                vae_recommend, test, len(movies), user_set
+                vae_recommend, test, len(movies), user_set, show_completion=True
             ),
             "Content based, unique genres": eval.evaluate(
-                lambda u: md.content_based_recommendation(u, movies, train, gen_sim, diversify=True), test, len(movies), users
+                lambda u: md.content_based_recommendation(u, movies, train, gen_sim, diversify=True), test, len(movies),
+                user_set, show_completion=True
             )
         }
 
