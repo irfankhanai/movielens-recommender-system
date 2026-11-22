@@ -212,10 +212,6 @@ def main() -> None:
             "Multi-VAE": eval.evaluate(
                 vae_recommend, test, len(movies), user_set, show_completion=True
             ),
-            "Content based, unique genres": eval.evaluate(
-                lambda u: md.content_based_recommendation(u, movies, train, gen_sim, diversify=True), test, len(movies),
-                user_set, show_completion=True
-            )
         }
 
         test_df = pd.DataFrame(

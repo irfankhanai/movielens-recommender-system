@@ -2,7 +2,7 @@
   "seed": 42,
   "bootstrap_repeats": 2000,
   "sign_flip_repeats": 10000,
-  "python": "3.14.6",
+  "python": "3.14.0",
   "split_sizes": {
     "train": 800164,
     "validation": 100024,
