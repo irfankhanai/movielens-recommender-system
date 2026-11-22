@@ -2,16 +2,28 @@
   "Popular (All)": {},
   "Popular (Positive)": {},
   "Item-kNN": {
-    "k": 40,
+    "k": 80,
     "similarity": "Cosine"
   },
   "User-kNN": {
-    "k": 80
+    "k": 160
   },
   "Content": {
-    "year_weight": 0.5
+    "year_weight": 0.0
   },
   "Hybrid": {
-    "alpha": 0.9
+    "alpha": 0.95
+  },
+  "Multi-VAE": {
+    "hidden_dim": 300,
+    "latent_dim": 100,
+    "dropout": 0.5,
+    "lr": 0.0001,
+    "batch_size": 128,
+    "anneal_cap": 0.3,
+    "anneal_steps": 2000,
+    "max_epochs": 100,
+    "patience": 20,
+    "seed": 42
   }
 }

@@ -271,10 +271,52 @@ def train_multi_vae(data, n_movies, hidden_dim=500, latent_dim=100, dropout=0.5,
                 logging.info(f"Early stopping at epoch {epoch}, best val NDCG@10 {best_ndcg:.4f}")
                 break
 
-    model.load_state_dict(best_state)
+    if best_state is not None:  # e.g. no validation users: keep the last weights
+        model.load_state_dict(best_state)
     history_df = pd.DataFrame(history, columns=["epoch", "loss", "recon", "kl", "beta",
                                                 "Precision", "Recall", "NDCG", "Coverage"])
     return model, history_df
+
+
+class MultiVAERecommender:
+    """Multi-VAE behind the shared Part 2 interface: ModelData in, recommend(user) out.
+
+    Trained on data.x (training positives only); the validation set is used only for
+    early stopping. Scores are softmax probabilities (always > 0), so ModelData.rank
+    applies the same seen-mask, tie policy and cold-user fallback as the other models.
+    """
+
+    def __init__(self, data, val, **settings):
+        self.data = data
+        x = data.x.astype(np.float32).tocsr()
+
+        # Seen matrix from ModelData.seen, which stays the full training set during the ablation
+        rows, cols = [], []
+        for user, items in data.seen.items():
+            row = data.user_index.get(user)
+            if row is not None:
+                rows.extend([row] * len(items))
+                cols.extend(items)
+        seen = csr_matrix((np.ones(len(rows), dtype=np.float32), (rows, cols)), shape=x.shape)
+
+        vae_data = {"X_train": x, "seen_train": seen,
+                    "train_rows": np.flatnonzero(x.getnnz(axis=1) > 0),
+                    "movie_ids": data.items, "val": val}
+        self.model, self.history = train_multi_vae(vae_data, len(data.items), **settings)
+        self.scores = self._score_all(x)
+
+    @torch.no_grad()
+    def _score_all(self, x, batch_size=1000):
+        self.model.eval()
+        x = torch.from_numpy(x.toarray())
+        return np.vstack([F.softmax(self.model(x[start:start + batch_size])[0], dim=1).numpy()
+                          for start in range(0, x.shape[0], batch_size)])
+
+    def recommend(self, user):
+        row = self.data.user_index.get(user)
+        if row is None:  # user unknown to the model
+            return self.data.rank(user, self.data.popular)
+        return self.data.rank(user, self.scores[row])
 
 
 ############################################################
