@@ -23,7 +23,7 @@ VAE_DROPOUT = 0.5
 # Multi-VAE: training
 VAE_LEARNING_RATE = 1e-4
 VAE_BATCH_SIZE = 128
-VAE_MAX_EPOCHS = 200
+VAE_MAX_EPOCHS = 100
 VAE_PATIENCE = 20           # epochs without val improvement before stopping
 
 # Multi-VAE: KL annealing
