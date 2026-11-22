@@ -28,6 +28,8 @@ def main() -> None:
                         help="Directory for CSV tables and plots")
     parser.add_argument("--show-plots", action="store_true",
                         help="Also display plots interactively")
+    parser.add_argument("--part", choices=["1", "2", "all"], default="all",
+                        help="Run Part 1, Part 2, or both (default: all)")
     args = parser.parse_args()
     if not args.data_dir.is_dir():
         parser.error(f"Dataset directory does not exist: {args.data_dir}")
@@ -36,6 +38,10 @@ def main() -> None:
         if not (args.data_dir / filename).is_file():
             parser.error(f"Missing dataset file: {args.data_dir / filename}")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    if args.part == "2":
+        from run_part2 import main as part2_main
+        part2_main(args.data_dir, args.output_dir / "part2")
+        return
     if not args.show_plots:
         analysis.plt.switch_backend("Agg")
 
@@ -241,6 +247,9 @@ def main() -> None:
     vae_history.to_csv(args.output_dir / "vae_history.csv", index=False)
 
     logging.info(f"Results saved successfully!")
+    if args.part == "all":
+        from run_part2 import main as part2_main
+        part2_main(args.data_dir, args.output_dir / "part2")
 
 
 if __name__ == "__main__":

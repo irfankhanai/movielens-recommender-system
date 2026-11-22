@@ -1,0 +1,17 @@
+{
+  "Popular (All)": {},
+  "Popular (Positive)": {},
+  "Item-kNN": {
+    "k": 40,
+    "similarity": "Cosine"
+  },
+  "User-kNN": {
+    "k": 80
+  },
+  "Content": {
+    "year_weight": 0.5
+  },
+  "Hybrid": {
+    "alpha": 0.9
+  }
+}
