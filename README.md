@@ -192,7 +192,7 @@ similarities are plausible explanations, not proven causal findings.
 
 ## Team
 
-- Member 1: Muhammad Irfan Haider Khan / 153218338 / GitHub: Irfankhanai
+- Member 1: Irfan Khan / 153218338 / GitHub: Irfankhanai
 - Member 2: Kaan Pide / 152267623 / GitHub: klsaerf
 - Member 3: Reinis Gustavs Ignatjevs / 152215565 / GitHub: ExtraAngel
 
