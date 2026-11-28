@@ -1,0 +1,21 @@
+user_id,lambda,rank,movie_id,title,genres,relevant_in_test,popular_head
+3691,1.0,1,1240,"Terminator, The (1984)",Action|Sci-Fi|Thriller,True,True
+3691,1.0,2,457,"Fugitive, The (1993)",Action|Thriller,False,True
+3691,1.0,3,858,"Godfather, The (1972)",Action|Crime|Drama,False,True
+3691,1.0,4,356,Forrest Gump (1994),Comedy|Romance|War,False,True
+3691,1.0,5,1387,Jaws (1975),Action|Horror,False,True
+3691,1.0,6,1527,"Fifth Element, The (1997)",Action|Sci-Fi,True,True
+3691,1.0,7,1221,"Godfather: Part II, The (1974)",Action|Crime|Drama,False,True
+3691,1.0,8,32,Twelve Monkeys (1995),Drama|Sci-Fi,True,True
+3691,1.0,9,1220,"Blues Brothers, The (1980)",Action|Comedy|Musical,False,True
+3691,1.0,10,47,Seven (Se7en) (1995),Crime|Thriller,True,True
+3691,0.8,1,1240,"Terminator, The (1984)",Action|Sci-Fi|Thriller,True,True
+3691,0.8,2,457,"Fugitive, The (1993)",Action|Thriller,False,True
+3691,0.8,3,858,"Godfather, The (1972)",Action|Crime|Drama,False,True
+3691,0.8,4,356,Forrest Gump (1994),Comedy|Romance|War,False,True
+3691,0.8,5,1387,Jaws (1975),Action|Horror,False,True
+3691,0.8,6,32,Twelve Monkeys (1995),Drama|Sci-Fi,True,True
+3691,0.8,7,1220,"Blues Brothers, The (1980)",Action|Comedy|Musical,False,True
+3691,0.8,8,47,Seven (Se7en) (1995),Crime|Thriller,True,True
+3691,0.8,9,2700,"South Park: Bigger, Longer and Uncut (1999)",Animation|Comedy,False,True
+3691,0.8,10,380,True Lies (1994),Action|Adventure|Comedy|Romance,False,True

@@ -1,4 +1,4 @@
-"""Run the MovieLens experiments: baselines (Part 1) and the Multi-VAE (Part 2).
+"""Run the MovieLens experiments: Part 1 baselines, Part 2 models, Part 3 MMR re-ranking.
 
 Usage:
     python run_all.py                      # uses config.DATA_DIR
@@ -28,8 +28,8 @@ def main() -> None:
                         help="Directory for CSV tables and plots")
     parser.add_argument("--show-plots", action="store_true",
                         help="Also display plots interactively")
-    parser.add_argument("--part", choices=["1", "2", "all"], default="all",
-                        help="Run Part 1, Part 2, or both (default: all)")
+    parser.add_argument("--part", choices=["1", "2", "3", "all"], default="all",
+                        help="Run Part 1, 2, 3, or all of them (default: all)")
     args = parser.parse_args()
     if not args.data_dir.is_dir():
         parser.error(f"Dataset directory does not exist: {args.data_dir}")
@@ -41,6 +41,10 @@ def main() -> None:
     if args.part == "2":
         from run_part2 import main as part2_main
         part2_main(args.data_dir, args.output_dir / "part2")
+        return
+    if args.part == "3":
+        from run_part3 import main as part3_main
+        part3_main(args.data_dir, args.output_dir / "part3")
         return
     if not args.show_plots:
         analysis.plt.switch_backend("Agg")
@@ -246,6 +250,8 @@ def main() -> None:
     if args.part == "all":
         from run_part2 import main as part2_main
         part2_main(args.data_dir, args.output_dir / "part2")
+        from run_part3 import main as part3_main
+        part3_main(args.data_dir, args.output_dir / "part3")
 
 
 if __name__ == "__main__":
