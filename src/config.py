@@ -33,3 +33,11 @@ VAE_ANNEAL_STEPS = 2000     # batches over which beta rises from 0 to the cap
 # Item-kNN
 KNN_DEFAULT_K = 20          # k for the initial kNN run before tuning
 KNN_K_VALUES = [5, 10, 20, 30, 40, 50]
+
+
+# Part 3 constants
+BASE_K = 160            # User-kNN k selected on validation in Part 2
+POOL = 100              # MMR re-ranks the base model's top-100 unseen movies
+LAMBDAS = [1.0, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]
+MAX_NDCG_LOSS = 0.05    # selection rule: lowest lambda losing <= 5% validation NDCG
+CAL_ALPHA = 0.01        # smoothing in the calibration KL (Steck, 2018)

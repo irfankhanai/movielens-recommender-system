@@ -14,7 +14,6 @@ from src.models import ModelData, ItemKNN, UserKNN, ContentProfile, Hybrid, Mult
 from src import config as cfg
 from src.part2_evaluation import per_user, aggregate, mean_ci, paired_test
 
-SEED = 42
 # Multi-VAE settings from config.py; the grid below overrides lr, anneal_cap and hidden_dim.
 VAE_BASE = dict(hidden_dim=cfg.VAE_HIDDEN_DIM, latent_dim=cfg.VAE_LATENT_DIM,
                 dropout=cfg.VAE_DROPOUT, lr=cfg.VAE_LEARNING_RATE,
@@ -80,7 +79,7 @@ def main(data_dir=None, output_dir=None):
     activity_cut = float(activity.median())
     time_cut = int(test.timestamp.median())
     # One seeded permutation produces nested 20% <= 50% <= 100% samples.
-    permutation = np.random.default_rng(SEED).permutation(len(train))
+    permutation = np.random.default_rng(cfg.SEED).permutation(len(train))
     for fraction in [1.0, 0.5, 0.2]:
         sample = train if fraction == 1 else train.iloc[permutation[:int(len(train)*fraction)]]
         data = ModelData(sample, movies, users, seen_train=train)
@@ -96,7 +95,7 @@ def main(data_dir=None, output_dir=None):
             metrics = aggregate(frame, len(movies))
             low, high = mean_ci(frame['NDCG@10'])
             sparsity.append({'Model': name, 'Training interactions (%)': int(100*fraction),
-                             **metrics, 'Seed(s)': SEED,
+                             **metrics, 'Seed(s)': cfg.SEED,
                              'Notes': f'n={len(frame)}; rows={len(sample)}; fixed cohort/seen; fixed settings; NDCG 95% CI [{low:.6f}, {high:.6f}]'})
             saved = frame.assign(Model=name, training_fraction=fraction).drop(columns='recommendations')
             user_rows.append(saved)
@@ -110,7 +109,7 @@ def main(data_dir=None, output_dir=None):
                                 'Key hyperparameters': json.dumps(settings),
                                 **aggregate(evaluated, len(movies)),
                                 'Variability / CI / test': f'User bootstrap NDCG 95% CI [{lo:.6f}, {hi:.6f}]; paired differences in paired_differences.csv',
-                                'Seed(s)': SEED, 'Notes': f'{cohort}; n={len(evaluated)}; fit train only'})
+                                'Seed(s)': cfg.SEED, 'Notes': f'{cohort}; n={len(evaluated)}; fit train only'})
             splits = [('User activity', 'low', f'1..{activity_cut:g} training ratings',
                        frame[frame.user_id.map(activity) <= activity_cut]),
                       ('User activity', 'high', f'>{activity_cut:g} training ratings',
@@ -123,7 +122,7 @@ def main(data_dir=None, output_dir=None):
                 lo, hi = mean_ci(subset['NDCG@10'])
                 groups.append({'Model': name, 'Breakdown dimension': dimension, 'Group': group,
                                'Definition / threshold': definition, **aggregate(subset, len(movies)),
-                               'Seed(s)': SEED, 'Notes': f'positive_history; n={len(subset)}; NDCG 95% CI [{lo:.6f}, {hi:.6f}]'})
+                               'Seed(s)': cfg.SEED, 'Notes': f'positive_history; n={len(subset)}; NDCG 95% CI [{lo:.6f}, {hi:.6f}]'})
         reference = fraction_frames['Item-kNN']
         for name, values in fraction_frames.items():
             if name == 'Item-kNN':
@@ -147,7 +146,7 @@ def main(data_dir=None, output_dir=None):
                            ('sparsity.csv', sparsity), ('paired_differences.csv', differences)]:
         pd.DataFrame(rows).to_csv(output_dir/filename, index=False)
     pd.concat(user_rows).to_csv(output_dir/'per_user_metrics.csv', index=False)
-    metadata = {'seed': SEED, 'bootstrap_repeats': 2000, 'sign_flip_repeats': 10000,
+    metadata = {'seed': cfg.SEED, 'bootstrap_repeats': 2000, 'sign_flip_repeats': 10000,
                 'python': __import__('platform').python_version(),
                 'split_sizes': dict(zip(['train', 'validation', 'test'], map(len, [train, val, test]))),
                 'activity_threshold': activity_cut, 'test_time_threshold': time_cut,

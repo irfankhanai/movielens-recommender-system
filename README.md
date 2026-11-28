@@ -20,6 +20,7 @@ movielens-recommender-system/
 │   └── Recommender_Systems_Results_Group_9.xlsm # One evolving project results
 ├── results/              
 │   ├── part2/            # Part 2 results
+│   ├── part3/            # Part 3 results (Track A: MMR re-ranking)
 │   ├── knn_tuning.csv
 │   ├── test_results.csv
 │   ├── vae_history.csv
@@ -32,11 +33,13 @@ movielens-recommender-system/
 │   ├── evaluation.py
 │   ├── models.py
 │   ├── part2_evaluation.py
-│   └── evaluation.py
+│   └── part3_diversity.py   # MMR re-ranker, ILD, Gini, calibration error
 ├── tests/                # Small correctness tests
-│   └── test_part2.py
+│   ├── test_part2.py
+│   └── test_part3.py
 ├── run_all.py            # Experiment entry point
 ├── run_part2.py          # Part 2 specific entry point
+├── run_part3.py          # Part 3 specific entry point
 ├── requirements.txt      # Pinned, locally verified dependencies
 ├── .gitignore
 └── README.md
@@ -81,10 +84,11 @@ Run with the directory containing movies.dat, ratings.dat, and users.dat:
 python run_all.py --data-dir ./data/ml-1m
 ```
 
-This now runs **Parts 1 and 2**. To run only the new experiments:
+This runs **Parts 1, 2 and 3**. To run a single part:
 
 ```bash
 python run_all.py --data-dir ./data/ml-1m --part 2
+python run_all.py --data-dir ./data/ml-1m --part 3   # about 20 seconds
 ```
 
 Use `--part 1` for the original baseline workflow. Python **3.14.6** and the
@@ -189,6 +193,59 @@ recommendation quality. The coarse content representation and noisier item
 similarities are plausible explanations, not proven causal findings.
 
 
+## Part 3 - Track A: diversity and popularity bias
+
+**Base recommender.** User-kNN with k=160, the Part 2 model with the highest test
+NDCG@10 (0.2196), refitted on the same training set with the same settings.
+
+**Intervention.** MMR re-ranking (Lecture 5.1, slide 9), implemented in
+`src/part3_diversity.py`. For each user we take the base model's top-100 unseen
+movies, scale their scores so the best one is 1, and greedily build a 10-item list.
+Each step picks the movie with the highest
+
+    lambda * relevance - (1 - lambda) * (highest genre similarity to a movie already picked)
+
+`lambda = 1` returns the base list unchanged (checked in code and tests);
+`lambda = 0` only looks for genre variety after the first pick.
+
+**Item representation and distance.** Each movie is a binary vector over the 18
+MovieLens genres. The distance between two movies is the **Jaccard distance of their
+genre sets**: `1 - |shared genres| / |genres of either movie|`. The same distance is
+used inside MMR and for intra-list diversity.
+
+**Sweep and operating point.** lambda in {1, 0.95, 0.9, 0.8, ..., 0.1, 0}, evaluated
+on validation (492 users) and test (991 users), the same positive-history cohorts as
+Part 2. The operating point is chosen on validation only, by a rule fixed before
+looking at test: the lowest lambda whose validation NDCG@10 is at least 95% of the
+base. This selects **lambda = 0.8**.
+
+**Metrics (Lecture 5.1, slide 7).** Precision/Recall/NDCG@10 as in Part 2;
+intra-list diversity = mean pairwise Jaccard genre distance in a list, averaged over
+users; catalogue coverage = distinct recommended movies / 3,883; Gini over how often
+each of the 3,883 movies is recommended (unrecommended movies count as 0);
+calibration error = Steck's KL(p || q~) between the genre mix of the user's liked
+training movies (p) and of the list (q), with q~ = 0.99 q + 0.01 p. We also report the
+long-tail share: the share of list slots outside the 315 most-liked movies that hold
+half of all positive training ratings.
+
+**Uncertainty and cost.** The chosen point is compared with the base on the same test
+users with a 95% paired bootstrap interval (2,000 resamples) and a sign-flip test
+(10,000 randomizations), seed 42. The change is broken down by user activity (86
+ratings, as in Part 2) and taste breadth (median entropy of the user's genre mix), at
+lambda = 0.8 and at a more aggressive lambda = 0.5.
+
+**Outputs in `results/part3/`.** `diversity.csv` uses the exact headers of the
+workbook's `Part 3A - Diversity` sheet (test set, one row per lambda). `sweep.csv`
+holds every metric on validation and test, `paired_differences.csv` and
+`breakdown.csv` the comparisons, `example_user.csv` one typical user's list before
+and after, `frontier.png` the frontier figure, and `run_metadata.json` the settings
+and data hashes.
+
+**Headline.** At lambda = 0.8, intra-list diversity rises from 0.783 to 0.837 and
+calibration error falls from 0.876 to 0.717, while NDCG@10 is unchanged (+0.0012,
+95% CI -0.0019 to 0.0043). Below lambda of about 0.7, accuracy drops steeply. Genre
+diversity does **not** reduce popularity bias: the long-tail share stays near 1% at
+the chosen point and reaches only 7.8% at lambda = 0, and Gini stays at about 0.97.
 
 ## Team
 
