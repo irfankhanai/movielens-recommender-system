@@ -12,18 +12,26 @@ The same distance is used inside MMR and for intra-list diversity (ILD).
 import numpy as np
 
 
-# --------------------------------------------------------------------------- #
+###############################################################################
 # Item representation and distance                                            #
-# --------------------------------------------------------------------------- #
+###############################################################################
 
 def genre_matrix(movies):
-    """Binary movie x genre matrix in the row order of movies.dat."""
+    """
+    Binary movie x genre matrix in the row order of movies.dat.
+    :param movies: The movie dataframe
+    :return: Genre matrix
+    """
     genres = movies.genres.str.get_dummies(sep='|')
     return genres.to_numpy(dtype=np.float32), list(genres.columns)
 
 
 def jaccard_distance(genres):
-    """All-pairs Jaccard distance between genre sets (items x items)."""
+    """
+    All-pairs Jaccard distance between genre sets (items x items).
+    :param genres: Genre matrix
+    :return: Jaccard distance between genre sets
+    """
     shared = genres @ genres.T                       # |G_i & G_j|
     sizes = genres.sum(axis=1)
     union = sizes[:, None] + sizes[None, :] - shared  # |G_i | G_j|
@@ -31,14 +39,15 @@ def jaccard_distance(genres):
     return 1.0 - similarity
 
 
-# --------------------------------------------------------------------------- #
+###############################################################################
 # The intervention: Maximal Marginal Relevance (Lecture 5.1, slide 9)         #
-# --------------------------------------------------------------------------- #
+###############################################################################
 
 def mmr_rerank(candidates, relevance, distance, lam, n=10):
-    """Greedy MMR.
+    """
+    Greedy MMR.
 
-    At every step pick the candidate i that maximises
+    At every step pick the candidate i that maximizes
         lam * relevance(i) - (1 - lam) * max_{j in selected} similarity(i, j)
     with similarity = 1 - distance. lam = 1 returns the base ranking unchanged;
     lam = 0 ignores relevance after the first pick.
@@ -46,6 +55,8 @@ def mmr_rerank(candidates, relevance, distance, lam, n=10):
     :param candidates: item indices, already in base-model rank order
     :param relevance: base scores of the candidates, scaled to [0, 1]
     :param distance: full item x item distance matrix
+    :param lam: Lambdas
+    :param n: Number of items to select
     :return: list of n item indices
     """
     candidates = np.asarray(candidates)
@@ -64,12 +75,17 @@ def mmr_rerank(candidates, relevance, distance, lam, n=10):
     return selected
 
 
-# --------------------------------------------------------------------------- #
+###############################################################################
 # Beyond-accuracy metrics (Lecture 5.1, slide 7)                              #
-# --------------------------------------------------------------------------- #
+###############################################################################
 
 def intra_list_diversity(items, distance):
-    """Mean pairwise distance between the items of one list."""
+    """
+    Mean pairwise distance between the items of one list.
+    :param items: List of items
+    :param distance: Distance matrix
+    :return: Intra-list diversity
+    """
     items = np.asarray(items)
     if len(items) < 2:
         return np.nan
@@ -78,10 +94,13 @@ def intra_list_diversity(items, distance):
 
 
 def gini(counts):
-    """Gini coefficient of how often each catalogue item is recommended.
+    """
+    Gini coefficient of how often each catalogue item is recommended.
 
     0 = every item recommended equally often, 1 = all exposure on one item.
     Computed over the full catalogue, so never-recommended items count as 0.
+    :param counts: Counts matrix
+    :return: Gini coefficient
     """
     x = np.sort(np.asarray(counts, dtype=float))
     n = len(x)
@@ -92,7 +111,12 @@ def gini(counts):
 
 
 def genre_distribution(items, genres):
-    """p(g): each movie spreads one unit of weight equally over its genres."""
+    """
+    p(g): each movie spreads one unit of weight equally over its genres.
+    :param items: List of items
+    :param genres: Genre matrix
+    :return: Genre distribution
+    """
     weights = genres[np.asarray(items)]
     weights = weights / np.maximum(weights.sum(axis=1, keepdims=True), 1)
     total = weights.sum(axis=0)
@@ -100,11 +124,16 @@ def genre_distribution(items, genres):
 
 
 def calibration_error(history_dist, list_dist, alpha=0.01):
-    """Steck (2018) miscalibration: KL(p || q~), q~ = (1 - alpha) q + alpha p.
+    """
+    Steck (2018) miscalibration: KL(p || q~), q~ = (1 - alpha) q + alpha p.
 
     p is the genre distribution of the user's liked training movies and q the
     distribution of the recommended list. 0 means the list mirrors the user's
     genre mix exactly; alpha avoids division by zero for missing genres.
+    :param history_dist: History distribution
+    :param list_dist: List distribution
+    :param alpha: Calibration parameter
+    :return: Calibration error
     """
     p = history_dist
     q = (1 - alpha) * list_dist + alpha * p
@@ -113,8 +142,13 @@ def calibration_error(history_dist, list_dist, alpha=0.01):
 
 
 def head_items(positive_counts, share=0.5):
-    """Boolean mask of the 'popular head': the fewest most-liked movies that
-    together hold `share` of all positive training interactions."""
+    """
+    Boolean mask of the 'popular head': the fewest most-liked movies that
+    together hold `share` of all positive training interactions.
+    :param positive_counts: Counts matrix
+    :param share: The share of positive training interactions
+    :return: Boolean mask
+    """
     order = np.argsort(-positive_counts, kind='stable')
     cumulative = np.cumsum(positive_counts[order]) / positive_counts.sum()
     n_head = int(np.searchsorted(cumulative, share) + 1)
